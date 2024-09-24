@@ -55,13 +55,13 @@ def app(df):
         data_for_display_transposed.columns = [int(year) for year in years_list]  # Utiliser les années entières sans décimales
         data_for_display_transposed = data_for_display_transposed.drop(data_for_display_transposed.index[0])
 
-        # Appliquer le style uniquement sur la première ligne (les années) pour les mettre en gras
-        styled_df = data_for_display_transposed.style.applymap(
-            lambda x: 'font-weight: bold', subset=pd.IndexSlice[:, data_for_display_transposed.columns]
+        # Mettre l'entête (les années) en gras
+        styled_df = data_for_display_transposed.style.set_properties(
+            **{'font-weight': 'bold'}, subset=pd.IndexSlice[:, :]
         )
 
-        # Afficher le tableau avec le style appliqué
-        st.dataframe(styled_df)
+        # Afficher le tableau avec le style appliqué sur l'entête
+        st.write(styled_df)
 
         # Section de téléchargement pour "Données pour l'indicateur"
         st.markdown("---")
@@ -127,6 +127,43 @@ def app(df):
             file_name='donnees_filtrees.xlsx',
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
+
+    # ---- Ajout du tableau pivot ----
+    st.subheader('Tableau Pivot')
+
+    # Sélectionner les colonnes pour le tableau pivot
+    pivot_index = st.selectbox('Sélectionnez l\'index pour le tableau pivot', options=['Institutions/Ministères', 'Année'])
+    pivot_column = st.selectbox('Sélectionnez la colonne pour les valeurs', options=['Budget Dépense Courante', 'Exécution Dépense'])
+
+    # Créer un tableau pivot
+    pivot_table = pd.pivot_table(df, values=pivot_column, index=pivot_index, columns='Année', aggfunc='sum')
+
+    # Afficher le tableau pivot
+    st.write("Voici le tableau pivot généré :")
+    st.dataframe(pivot_table)
+
+    # Télécharger le tableau pivot
+    csv_pivot = convert_df_to_csv(pivot_table)
+    excel_pivot = convert_df_to_excel(pivot_table)
+
+    st.download_button(
+        label="Télécharger le Tableau Pivot en CSV",
+        data=csv_pivot,
+        file_name='tableau_pivot.csv',
+        mime='text/csv',
+    )
+
+    st.download_button(
+        label="Télécharger le Tableau Pivot en EXCEL",
+        data=excel_pivot,
+        file_name='tableau_pivot.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+
+
+
+
+
 
 
 
