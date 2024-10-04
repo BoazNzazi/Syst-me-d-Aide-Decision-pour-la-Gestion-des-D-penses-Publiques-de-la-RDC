@@ -39,8 +39,16 @@ def app():
 
     # Contenu de l'accueil
     st.title("SYSTÈME D'AIDE À LA DÉCISION POUR LA GESTION DES DÉPENSES PUBLIQUES")
-    st.write('Bienvenue dans l\'application.')
-    st.write('Choisissez une option dans le menu pour commencer.')
+    st.write("Bienvenue dans l'application.")
+    st.write("Choisissez une option dans le menu pour commencer.")
+
+# Exécution de l'application
+if __name__ == '__main__':
+    app()
+
+
+
+
 
 
 

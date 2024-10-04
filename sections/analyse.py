@@ -6,6 +6,9 @@ from io import BytesIO
 import waterfall_chart
 import warnings
 import time
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+
 
 # Ignorer les warnings FutureWarning
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -51,9 +54,9 @@ def app(df):
     </div>
     """, unsafe_allow_html=True)
 
-    # Titre pour l'analyse avancée
+    # Titre pour l'analyse avancée sans fond coloré
     st.markdown("""
-    <div style='text-align: center; padding: 10px; background-color: #4CAF50; color: white;'>
+    <div style='text-align: center; padding: 10px; color: #4CAF50;'>
         <h2 style='margin: 0;'>Analyse Avancée</h2>
     </div>
     """, unsafe_allow_html=True)
@@ -161,6 +164,7 @@ def app(df):
 
             fig3, ax3 = plt.subplots(figsize=(6, 4))
             waterfall_chart.plot(labels, data)
+            ax3.set_ylim(0, 3000000)  # Fixe l'axe y à une plage constante (ajustez selon vos données)
             plt.title(f"Waterfall Chart pour l'année {annee}")
             plt.ylabel("Montant en millions de CDF")
             st.pyplot(plt)
@@ -236,6 +240,7 @@ def app(df):
 
                     fig3, ax3 = plt.subplots(figsize=(6, 4))
                     waterfall_chart.plot(labels, data)
+                    ax3.set_ylim(0, 3000000)  # Fixe l'axe y à une plage constante (ajustez selon vos données)
                     plt.title(f"Waterfall Chart pour {choix} en {annee}")
                     plt.ylabel("Montant en millions de CDF")
                     st.pyplot(plt)
@@ -249,6 +254,72 @@ def app(df):
             
             else:
                 st.write(f"Aucune donnée disponible pour {choix} en {annee}")
+    with tab2:
+            st.markdown("<h4 style='color:#4CAF50;'>Régression Linéaire</h4>", unsafe_allow_html=True)
+
+            # Sélection du ministère (variable indépendante)
+            ministere_options = list(df['Institutions/Ministères'].unique())
+            ministere_choix = st.selectbox("Choisissez un ministère (variable indépendante)", ministere_options)
+
+            # Sélection de l'indicateur (variable dépendante)
+            indicateur_options = ['PIB/Hab', 'Taux de Croissance PIB', 'Taux Chomage', 'Inflation', 'Esperance de Vie']
+            indicateur_choix = st.selectbox("Choisissez un indicateur (variable dépendante)", indicateur_options)
+
+            # Filtrer les données en fonction du ministère sélectionné
+            df_ministere = df[df['Institutions/Ministères'] == ministere_choix]
+
+            # Extraction des variables X et y
+            X = df_ministere[['Budget Dépense Courante']].fillna(0)  # Dépenses du ministère (variable indépendante)
+            y = df_ministere[indicateur_choix].fillna(0)  # Indicateur économique (variable dépendante)
+
+            # Vérifier s'il y a suffisamment de données pour faire une régression
+            if len(X) > 1 and len(y) > 1:
+                # Division des données en ensembles d'entraînement et de test
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+                # Création et ajustement du modèle de régression linéaire
+                model = LinearRegression()
+                model.fit(X_train, y_train)
+
+                # Prédiction sur les données de test
+                y_pred = model.predict(X_test)
+
+                # Affichage du graphique de régression
+                fig, ax = plt.subplots(figsize=(6, 4))
+                ax.scatter(X_test, y_test, color='blue', label='Valeurs réelles')
+                ax.plot(X_test, y_pred, color='red', label='Prédictions')
+                ax.set_title(f"Régression Linéaire : {ministere_choix} vs {indicateur_choix}")
+                ax.set_xlabel(f'Dépenses du ministère ({ministere_choix})')
+                ax.set_ylabel(indicateur_choix)
+                ax.legend()
+                st.pyplot(fig)
+
+                # Affichage des coefficients de régression
+                coef = model.coef_[0]
+                intercept = model.intercept_
+                st.write(f"**Coefficient de régression (pente)** : {coef:.4f}")
+                st.write(f"**Ordonnée à l'origine** : {intercept:.4f}")
+
+                # Évaluation du modèle
+                r2_score = model.score(X_test, y_test)
+                st.write(f"**R² (Score de détermination)** : {r2_score:.4f}")
+
+                st.download_button(
+                    label="Télécharger le graphique (Régression Linéaire)",
+                    data=download_plot_as_image(fig),
+                    file_name=f"regression_lineaire_{ministere_choix}_{indicateur_choix}.png",
+                    mime="image/png"
+                )
+            else:
+                st.warning("Pas assez de données pour effectuer une régression linéaire.")
+
+    
+
+    
+
+
+
+
 
 
 
