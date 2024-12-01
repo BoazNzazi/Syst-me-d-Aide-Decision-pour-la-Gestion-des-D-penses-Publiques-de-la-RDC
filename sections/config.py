@@ -1,0 +1,2 @@
+# config.py
+API_KEY = "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"
